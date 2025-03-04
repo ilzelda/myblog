@@ -12,7 +12,7 @@ export default async function Home() {
       <ul>
         {pages.map((page) => (
           <li key={page.id}>
-            {page?.child_page?.title || "No Title"}
+            {"child_page" in page ? page.child_page.title : "No Title"}
           </li>
         ))}
       </ul>
