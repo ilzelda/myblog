@@ -16,6 +16,7 @@ export async function getChildPages(page_id: string) {
 // 특정 페이지 정보 가져오기
 export async function getPage(pageId: string) {
   const response = await notion.pages.retrieve({ page_id: pageId })
+  console.log("[LOG] getPage : \n", response)
   return response
 }
 
