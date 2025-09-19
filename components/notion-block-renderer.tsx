@@ -1,20 +1,55 @@
 import React from 'react';
 import Image from 'next/image';
 
+// Notion API 타입 정의
+interface RichText {
+  plain_text: string;
+  href?: string;
+  annotations: {
+    bold: boolean;
+    italic: boolean;
+    strikethrough: boolean;
+    underline: boolean;
+    code: boolean;
+    color: string;
+  };
+}
+
+interface NotionBlock {
+  id: string;
+  type: string;
+  [key: string]: unknown;
+  children?: NotionBlock[];
+}
+
+interface BlockValue {
+  rich_text?: RichText[];
+  language?: string;
+  caption?: RichText[];
+  type?: string;
+  external?: { url: string };
+  file?: { url: string };
+  icon?: {
+    type: string;
+    emoji?: string;
+  };
+  url?: string;
+}
+
 interface NotionBlockRendererProps {
-  blocks: any[];
+  blocks: NotionBlock[];
 }
 
 const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => {
-  const renderBlock = (block: any) => {
+  const renderBlock = (block: NotionBlock) => {
     const { type, id } = block;
-    const value = block[type];
+    const value = block[type] as BlockValue;
 
     switch (type) {
       case 'paragraph':
         return (
           <p key={id} className="mb-4">
-            {value.rich_text.map((text: any, index: number) => (
+            {(value.rich_text || []).map((text: RichText, index: number) => (
               <span
                 key={index}
                 className={`
@@ -43,21 +78,21 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
       case 'heading_1':
         return (
           <h1 key={id} className="text-2xl font-bold mb-4 mt-8">
-            {value.rich_text.map((text: any) => text.plain_text).join('')}
+            {(value.rich_text || []).map((text: RichText) => text.plain_text).join('')}
           </h1>
         );
 
       case 'heading_2':
         return (
           <h2 key={id} className="text-xl font-bold mb-3 mt-6">
-            {value.rich_text.map((text: any) => text.plain_text).join('')}
+            {(value.rich_text || []).map((text: RichText) => text.plain_text).join('')}
           </h2>
         );
 
       case 'heading_3':
         return (
           <h3 key={id} className="text-lg font-bold mb-2 mt-4">
-            {value.rich_text.map((text: any) => text.plain_text).join('')}
+            {(value.rich_text || []).map((text: RichText) => text.plain_text).join('')}
           </h3>
         );
 
@@ -65,7 +100,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
       case 'numbered_list_item':
         return (
           <li key={id} className="mb-2 ml-4">
-            {value.rich_text.map((text: any, index: number) => (
+            {(value.rich_text || []).map((text: RichText, index: number) => (
               <span key={index}>{text.plain_text}</span>
             ))}
             {block.children && (
@@ -80,7 +115,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
         return (
           <pre key={id} className="bg-gray-900 text-white p-4 rounded mb-4 overflow-x-auto">
             <code className={`language-${value.language || 'text'}`}>
-              {value.rich_text.map((text: any) => text.plain_text).join('')}
+              {(value.rich_text || []).map((text: RichText) => text.plain_text).join('')}
             </code>
           </pre>
         );
@@ -88,7 +123,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
       case 'quote':
         return (
           <blockquote key={id} className="border-l-4 border-gray-300 pl-4 italic mb-4">
-            {value.rich_text.map((text: any, index: number) => (
+            {(value.rich_text || []).map((text: RichText, index: number) => (
               <span key={index}>{text.plain_text}</span>
             ))}
           </blockquote>
@@ -98,19 +133,21 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
         return <hr key={id} className="my-8 border-gray-300" />;
 
       case 'image':
-        const src = value.type === 'external' ? value.external.url : value.file.url;
+        const src = value.type === 'external' && value.external 
+          ? value.external.url 
+          : value.file?.url || '';
         return (
           <div key={id} className="mb-6">
             <Image
               src={src}
-              alt={value.caption ? value.caption.map((c: any) => c.plain_text).join('') : ''}
+              alt={value.caption ? value.caption.map((c: RichText) => c.plain_text).join('') : ''}
               width={800}
               height={400}
               className="rounded-lg"
             />
             {value.caption && value.caption.length > 0 && (
               <p className="text-sm text-gray-600 mt-2 text-center">
-                {value.caption.map((c: any) => c.plain_text).join('')}
+                {value.caption.map((c: RichText) => c.plain_text).join('')}
               </p>
             )}
           </div>
@@ -120,7 +157,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
         return (
           <details key={id} className="mb-4">
             <summary className="cursor-pointer font-medium">
-              {value.rich_text.map((text: any) => text.plain_text).join('')}
+              {(value.rich_text || []).map((text: RichText) => text.plain_text).join('')}
             </summary>
             <div className="mt-2 ml-4">
               {block.children && <NotionBlockRenderer blocks={block.children} />}
@@ -138,7 +175,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
                 </span>
               )}
               <div>
-                {value.rich_text.map((text: any, index: number) => (
+                {(value.rich_text || []).map((text: RichText, index: number) => (
                   <span key={index}>{text.plain_text}</span>
                 ))}
               </div>
@@ -150,7 +187,7 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
         return (
           <div key={id} className="mb-6">
             <iframe
-              src={value.url}
+              src={value.url as string}
               className="w-full h-96 border rounded"
               title="Embedded content"
             />
@@ -169,12 +206,12 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
   };
 
   // 연속된 리스트 아이템들을 그룹화
-  const groupBlocks = (blocks: any[]) => {
-    const grouped = [];
-    let currentList: any[] = [];
+  const groupBlocks = (blocks: NotionBlock[]) => {
+    const grouped: (NotionBlock | { type: string; listType: string; items: NotionBlock[]; id: string })[] = [];
+    let currentList: NotionBlock[] = [];
     let currentListType = '';
 
-    blocks.forEach((block, index) => {
+    blocks.forEach((block) => {
       if (block.type === 'bulleted_list_item' || block.type === 'numbered_list_item') {
         if (currentListType === block.type) {
           currentList.push(block);
@@ -183,7 +220,8 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
             grouped.push({
               type: 'list',
               listType: currentListType,
-              items: currentList
+              items: currentList,
+              id: `list-${grouped.length}`
             });
           }
           currentListType = block.type;
@@ -194,7 +232,8 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
           grouped.push({
             type: 'list',
             listType: currentListType,
-            items: currentList
+            items: currentList,
+            id: `list-${grouped.length}`
           });
           currentList = [];
           currentListType = '';
@@ -207,7 +246,8 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
       grouped.push({
         type: 'list',
         listType: currentListType,
-        items: currentList
+        items: currentList,
+        id: `list-${grouped.length}`
       });
     }
 
@@ -220,14 +260,14 @@ const NotionBlockRenderer: React.FC<NotionBlockRendererProps> = ({ blocks }) => 
     <div className="prose prose-lg max-w-none">
       {groupedBlocks.map((block, index) => {
         if (block.type === 'list') {
-          const ListComponent = block.listType === 'numbered_list_item' ? 'ol' : 'ul';
+          const ListComponent = (block as { listType: string; items: NotionBlock[] }).listType === 'numbered_list_item' ? 'ol' : 'ul';
           return (
             <ListComponent key={index} className="mb-4">
-              {block.items.map((item: any) => renderBlock(item))}
+              {(block as { items: NotionBlock[] }).items.map((item: NotionBlock) => renderBlock(item))}
             </ListComponent>
           );
         }
-        return renderBlock(block);
+        return renderBlock(block as NotionBlock);
       })}
     </div>
   );

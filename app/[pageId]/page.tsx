@@ -12,7 +12,7 @@ export default async function BlogPost({ params }: { params: Promise<{ pageId: s
     let title = "제목 없음";
     if ('properties' in page && page.properties.title && 'title' in page.properties.title) {
       title = page.properties.title.title
-        .map((part: any) => part.plain_text)
+        .map((part: { plain_text: string }) => part.plain_text)
         .join("");
     }
 
