@@ -16,7 +16,8 @@ export default function NotionRenderer({ markdown }: NotionRendererProps) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({ node, inline, className, children, ...props }) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          code({ inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "")
             return !inline && match ? (
               <SyntaxHighlighter style={atomDark} language={match[1]} PreTag="div" {...props}>
@@ -28,7 +29,8 @@ export default function NotionRenderer({ markdown }: NotionRendererProps) {
               </code>
             )
           },
-          img({ node, ...props }) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          img({ ...props }: any) {
             return (
               <div className="relative w-full h-96 my-8">
                 <Image src={props.src || ""} alt={props.alt || ""} fill className="object-contain" />

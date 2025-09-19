@@ -5,7 +5,11 @@ import { getChildPages } from "../lib/notion";
 export const revalidate = 60;
 
 export default async function Home() {
-  const pages = await getChildPages(process.env.NOTION_PARENT_PAGE_ID);
+  const parentPageId = process.env.NOTION_PARENT_PAGE_ID;
+  if (!parentPageId) {
+    throw new Error("NOTION_PARENT_PAGE_ID environment variable is required");
+  }
+  const pages = await getChildPages(parentPageId);
 
   return (
     <div>

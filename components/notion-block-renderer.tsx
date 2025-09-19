@@ -15,7 +15,7 @@ interface RichText {
   };
 }
 
-interface NotionBlock {
+export interface NotionBlock {
   id: string;
   type: string;
   [key: string]: unknown;

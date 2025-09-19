@@ -1,6 +1,6 @@
 import { getPage, getBlocks } from "@/lib/notion"
 import { notFound } from "next/navigation"
-import NotionBlockRenderer from "../../components/notion-block-renderer"
+import NotionBlockRenderer, { NotionBlock } from "../../components/notion-block-renderer"
 
 export default async function BlogPost({ params }: { params: Promise<{ pageId: string }> }) {
   try {
@@ -23,7 +23,9 @@ export default async function BlogPost({ params }: { params: Promise<{ pageId: s
     }
 
     // 페이지 블록들 가져오기
-    const blocks = await getBlocks(pageId)
+    // 페이지 블록들 가져오기 (타입 변환)
+    const blocksResponse = await getBlocks(pageId)
+    const blocks = blocksResponse.filter(block => 'type' in block) as NotionBlock[]
 
     return (
       <article className="container mx-auto px-4 py-8">

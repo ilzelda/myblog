@@ -40,9 +40,9 @@ export async function getBlocks(blockId: string) {
   // 중첩된 블록 처리
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i]
-    if (block.has_children) {
+    if ('has_children' in block && block.has_children) {
       const children = await getBlocks(block.id)
-      blocks[i].children = children
+      ;(blocks[i] as unknown as { children: unknown }).children = children
     }
   }
 
